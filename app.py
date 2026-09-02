@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
-import ollama
+import requests as req
 from ratings_store import save_rating, load_ratings
+
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]# <-- paste your real Groq API key here
 
 st.set_page_config(page_title="Movie & Web Series Recommender", page_icon="🎬", layout="centered")
 
@@ -183,12 +185,16 @@ Candidates:
 
 Pick the best 2-3 matches ONLY from the list above. Use the titles exactly as written. Explain briefly why each fits the user's request. Be conversational and friendly."""
 
-    response = ollama.chat(
-        model="phi3",
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0.2}
+    response = req.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+        json={
+            "model": "openai/gpt-oss-20b",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2
+        }
     )
-    return response["message"]["content"]
+    return response.json()["choices"][0]["message"]["content"]
 
 # ---------- UI ----------
 st.markdown('<div class="marquee-title">🎬 NOW SHOWING</div>', unsafe_allow_html=True)
